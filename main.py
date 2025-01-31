@@ -146,15 +146,3 @@ sub_title.config(text="1번은 이동해 주십시오.", bg="#0e0e0e", fg="light
 
 print("===game start===")
 window.mainloop()
-# # 게임 루프
-# while len(survivor) + len(winner) > 2:
-#     back_up = list(survivor)
-#     for i in back_up: # 순서 진행
-#         print("==="+i+"===")
-#         if i == "player": # 플레이어 차례
-#             entry(int(input("들어갈 방 번호")), i)
-#         if "bot" in i: # 게임 에이아이
-#             pass
-#     input("break point")
-# print("게임이 종료되었습니다.")
-# ##
