@@ -1,6 +1,7 @@
 import tkinter
 import random
 
+
 # 플레이어 행동
 def entry(target, player): # target = 방 번호 (인덱스), player = 선수 이름
     print("entry:", target, player)
@@ -42,23 +43,58 @@ def game_loop(target):
     print("parameter:", target)
     participants[current_player].config(bg="#f46c8c")
     subject = survivor[current_player]
-    notice.config(text=entry(target, subject)) # 메인 알고리즘 호출 후 리턴값으로 해설함
-    print("round check:", current_player, "/", len(survivor))
+    if target != "bot":
+        notice.config(text=entry(target, subject)) # 메인 알고리즘 호출 후 리턴값으로 해설함
+        print("round check:", current_player, "/", len(survivor))
+    else:
+        best_choice = {"num": [], "probability": 0, "aim": 1}
+        # TODO : 이제 봇만 만들면 배포 준비 (미완성 코드)
+        # num 안에 있는 것들이 가장 좋은 경우의 수, 확률은 살아남을 확률, 에임은 고점 (0 아니면 2)
+        # for q, a in enumerate(ground):
+        #     if a["available"]:
+        #         if not ground[q - 1]["available"]:
+        #             pass
+        #         elif not ground[(q + 1) % len(ground)]["available"]:
+        #             pass
+        ##
+        # 50퍼 넘는 가능성 없으면 아무데나 가고, 반반 확률이면 1/2 확률로 상남자 픽
+        if best_choice["probability"] < 50 or (best_choice["probability"] == 50 and random.randrange(0, 2)):
+            t = random.randrange(0, len(ground))
+            print(ground[t]["available"])
+            while not ground[t]["available"]:
+                t = random.randrange(0, len(ground))
+                print(ground[t]["available"])
+            notice.config(text=entry(t, subject))
+        else: # 반절 넘으면 계산한 대로 이동
+            notice.config(text=entry(random.randrange(0, len(best_choice["num"])), subject))
+    # 차례 세는 구분자 초기화
     if current_player == len(survivor):
         print("round end")
         current_player = 0
+    # 게임 끝내기
     if len(survivor) + len(winner) == 2 or len(winner) == 2:
         print("===game end===")
         notice.config(text="게임이 종료되었습니다.")
         sub_title.config(text="통과하신 2명의 플레이어 분들을 진심으로 축하합니다.")
-        for e in ground:
+        for q in ground:
             # % (방 번호, 해당 방 종류 표기, 힌트숫자)
-            e["ui"].config(text="%s번 %s[%s]" % (ground.index(e) + 1, private_number[ground[ground.index(e)]["room"]],
-                            ground[ground.index(e)-1]["room"] + ground[(ground.index(e)+1) % (len(ground))]["room"]),
-                     state="disabled")
+            q["ui"].config(text="%s번 %s[%s]" % (ground.index(q) + 1, private_number[ground[ground.index(q)]["room"]],
+                        ground[ground.index(q) - 1]["room"] + ground[(ground.index(q) + 1) % (len(ground))]["room"]),
+                           state="disabled")
+        operate_the_bot.config(state="disabled")
+    # 버튼 접근 설정
     else:
         sub_title.config(text="%s, 방으로 이동하세요" % survivor[current_player])
         participants[current_player].config(bg="#FFCFCF")
+        if survivor[current_player] != "player":
+            operate_the_bot.config(state="normal")
+            for q in ground:
+                q["ui"].config(state="disabled")
+        else:
+            operate_the_bot.config(state="disabled")
+            for q in ground:
+                if q["available"]:
+                    q["ui"].config(state="normal")
     print("==loop next==")
 
 # 프론트 설정
@@ -122,15 +158,24 @@ winner = [] # 탈출자 목록
 survivor = [] # 게임 중인 인원 목록
 participants = [] # 화면에 띄울 객체들 목록 (survivor과 인덱스를 공유합니다.)
 ##
+
 # 순서 결정 (다음 코드들은 봇전 전용입니다)
 for i in range(9):
     survivor.append("bot%s" % (i+1)) # 멀티 들어가면 버튼 누르기로 정해야 합니다
     participants.append(tkinter.Label(leaderboard, text=survivor[-1], font=("Basic", height // 30), bg="#f46c8c"))
-my_turn = random.randrange(0, 10) #
+my_turn = random.randrange(0, 10)
 survivor.insert(my_turn, "player")
 participants.insert(my_turn, tkinter.Label(leaderboard, text="player", font=("Basic", height // 30), bg="#f46c8c"))
 for i in participants:
     i.pack()
+operate_the_bot = tkinter.Button(leaderboard, text="봇 이동 시키기", command=lambda: game_loop("bot"))
+if survivor[0] == "player":
+    operate_the_bot.config(state="disabled")
+else:
+    operate_the_bot.config(state="normal")
+    for e in ground:
+        e["ui"].config(state="disabled")
+operate_the_bot.pack()
 ##
 print(survivor)
 
