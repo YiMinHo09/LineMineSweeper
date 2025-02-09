@@ -1,5 +1,6 @@
 import tkinter
 import random
+from logging import exception
 
 
 # 플레이어 행동
@@ -30,7 +31,7 @@ def entry(target, player): # target = 방 번호 (인덱스), player = 선수 �
         # 힌트 공개 (방 열림 처리)
         hint_num = ground[target-1]["room"] + ground[(target+1) % (len(ground))]["room"]
         ground[target]["available"] = 0
-        print(target + 1, hint_num)
+        ground[target]["known"] = 1
         output += "%s번방의 힌트 값은 " % (target + 1) + str(hint_num) + " 입니다."
         print("%s번방의 힌트 값은" % (target + 1), hint_num, "입니다.")
         ground[target]["ui"].config(text="%s번 %s[%s]" % (target + 1, private_number[ground[target]["room"]], hint_num),
@@ -47,26 +48,76 @@ def game_loop(target):
         notice.config(text=entry(target, subject)) # 메인 알고리즘 호출 후 리턴값으로 해설함
         print("round check:", current_player, "/", len(survivor))
     else:
-        best_choice = {"num": [], "probability": 0, "aim": 1}
+        best_choice = {"num": [], "probability": -99} # num 안에 있는 것들이 가장 좋은 방, 확률은 이 방의 잠재 가치
+        spade_choice = [] # 삽질 리스트 : 힌트 없이 새로 방을 들어가야 할 때 경우의 수
         # TODO : 이제 봇만 만들면 배포 준비 (미완성 코드)
-        # num 안에 있는 것들이 가장 좋은 경우의 수, 확률은 살아남을 확률, 에임은 고점 (0 아니면 2)
-        # for q, a in enumerate(ground):
-        #     if a["available"]:
-        #         if not ground[q - 1]["available"]:
-        #             pass
-        #         elif not ground[(q + 1) % len(ground)]["available"]:
-        #             pass
-        ##
-        # 50퍼 넘는 가능성 없으면 아무데나 가고, 반반 확률이면 1/2 확률로 상남자 픽
-        if best_choice["probability"] < 50 or (best_choice["probability"] == 50 and random.randrange(0, 2)):
-            t = random.randrange(0, len(ground))
-            print(ground[t]["available"])
-            while not ground[t]["available"]:
-                t = random.randrange(0, len(ground))
-                print(ground[t]["available"])
-            notice.config(text=entry(t, subject))
+        print("=알고리즘 시작=")
+        for q, a in enumerate(ground):
+            probability = -99
+            if a["available"]: # 들어갈 수 있는 방의 종류가 뭔지 추론함
+                print("!", q, "번째 방")
+                for k in [-1, 1]:
+                    if not ground[(q + k) % (len(ground))]["available"]: # 단서가 있는가
+                        print("힌트가 있음", k)
+                        if ground[(q + k*2) % (len(ground))]["known"]: # 방의 종류가 확정됨
+                            print("정석 추론 가능")
+                            a["known"] = 1
+                            if a["room"] == 0: # 공지 취급
+                                probability = 1
+                            elif a["room"] == 1: # 지뢰 취급
+                                probability = -1
+                            elif a["room"] == 2: # 활로 취급
+                                probability = 2
+                            # 등록
+                            if probability > best_choice["probability"]:
+                                best_choice["num"] = [ground.index(a)]
+                                best_choice["probability"] = probability
+                                print("확률 갱신됨", best_choice)
+                            elif probability == best_choice["probability"]:
+                                best_choice["num"].append(ground.index(a))
+                                print("추가 완료", best_choice)
+                        # ground[target-1]["room"] + ground[(target+1) % (len(ground))]["room"]
+                        elif (ground[(q + k - 1)]["room"] + ground[(q + k + 1) % (len(ground))]["room"] == 0
+                              or ground[(q + k - 1)]["room"] + ground[(q + k + 1) % (len(ground))]["room"] == 4):
+                            print("지뢰 가능성 없음")  # 공지 혹은 활로로 확정됨
+                            a["known"] = 1
+                            probability = ground[(q + k) % (len(ground))]["room"] + 1
+                            # 등록
+                            if probability > best_choice["probability"]:
+                                best_choice["num"] = [ground.index(a)]
+                                best_choice["probability"] = probability
+                                print("확률 갱신됨", best_choice)
+                            elif probability == best_choice["probability"]:
+                                best_choice["num"].append(ground.index(a))
+                                print("추가 완료", best_choice)
+                        else: # 생존 확률만 계산됨
+                            print("경우의 수 계산 필요")
+                            if ground[q * k]["room"] == 1: # 공지인 경우(+1) + 지뢰인 경우(-1)
+                                probability = 0
+                            if ground[q * k]["room"] == 2: # 활로인 경우(+2) + 공지인 경우(+1) + 지뢰인 경우(-1) + 지뢰인 경우(-1)
+                                probability = 1
+                            if ground[q * k]["room"] == 3: # 활로인 경우(+2) + 지뢰인 경우(-1)
+                                probability = 1
+                            # 등록
+                            if probability > best_choice["probability"]:
+                                best_choice["num"] = [ground.index(a)]
+                                best_choice["probability"] = probability
+                                print("확률 갱신됨", best_choice)
+                            elif probability == best_choice["probability"]:
+                                best_choice["num"].append(ground.index(a))
+                                print("추가 완료", best_choice)
+                        break
+                else: # 무작위로 고를 목록에 추가
+                    spade_choice.append(q)
+                    print("변두리 방", spade_choice)
+        # 최선의 경우가 손해일 때는 무작위로 이동, 반반일 때는 무작위로 이동하거나 계산대로 이동함
+        print("= 선택의 시간", subject)
+        if best_choice["probability"] < 0 or (best_choice["probability"] == 0 and random.randrange(0, 2)):
+            print("삽질을 해야겠어", spade_choice)
+            notice.config(text=entry(random.choice(spade_choice), subject))
         else: # 반절 넘으면 계산한 대로 이동
-            notice.config(text=entry(random.randrange(0, len(best_choice["num"])), subject))
+            print("저기로 가야겠어", best_choice)
+            notice.config(text=entry(random.choice(best_choice["num"]), subject))
     # 차례 세는 구분자 초기화
     if current_player == len(survivor):
         print("round end")
@@ -141,9 +192,10 @@ for i in range(sum(contain)):
         ground.append({"room": room_num, "available": 1,
                        "ui": tkinter.Button(ui_ground, text="%s번" % (len(ground) + 1), width=width // 24,
                                             command=lambda t=len(ground): game_loop(t),
-                                            bg="#36393f", fg="#b4b5b7")})
-        # room : 방 종류, available : 방을 선택할 수 있는가(반대론 정보가 공개 되었는가), ui : 이 방을 화면에 표기하는 객체
-        # available은 봇이 사용하는 정보입니다. (멀티 들어가면 없어집니다)
+                                            bg="#36393f", fg="#b4b5b7"),
+                       "known": 0})
+        # room : 방 종류, available : 방을 선택할 수 있는가, ui : 이 방을 화면에 표기하는 객체, known : 방 정보가 공개되었는가
+        # known은 봇이 사용하는 정보입니다. (멀티 들어가면 없어집니다)
         print("ground:", ground)
         contain[room_num] -= 1
         ground[-1]["ui"].pack()
