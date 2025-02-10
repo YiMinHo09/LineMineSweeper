@@ -1,7 +1,5 @@
 import tkinter
 import random
-from logging import exception
-
 
 # 플레이어 행동
 def entry(target, player): # target = 방 번호 (인덱스), player = 선수 이름
@@ -92,10 +90,10 @@ def game_loop(target):
                                 print("추가 완료", best_choice)
                         else: # 생존 확률만 계산됨
                             print("경우의 수 계산 필요")
-                            if ground[q * k]["room"] == 1: # 공지인 경우(+1) + 지뢰인 경우(-1)
+                            if ground[q * k]["room"] == 1: # 공지인 경우(0) + 지뢰인 경우(-1)
+                                probability = -1
+                            if ground[q * k]["room"] == 2: # 활로인 경우(+2) + 공지인 경우(0) + 지뢰인 경우(-1) + 지뢰인 경우(-1)
                                 probability = 0
-                            if ground[q * k]["room"] == 2: # 활로인 경우(+2) + 공지인 경우(+1) + 지뢰인 경우(-1) + 지뢰인 경우(-1)
-                                probability = 1
                             if ground[q * k]["room"] == 3: # 활로인 경우(+2) + 지뢰인 경우(-1)
                                 probability = 1
                             # 등록
