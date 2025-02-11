@@ -123,8 +123,7 @@ def game_loop(target):
     # 게임 끝내기
     if len(survivor) + len(winner) == 2 or len(winner) == 2:
         print("===game end===")
-        notice.config(text="게임이 종료되었습니다.")
-        sub_title.config(text="통과하신 2명의 플레이어 분들을 진심으로 축하합니다.")
+        sub_title.config(text="게임이 종료되었습니다.\n통과하신 2명의 플레이어 분들을 진심으로 축하합니다.")
         for q in ground:
             # % (방 번호, 해당 방 종류 표기, 힌트숫자)
             q["ui"].config(text="%s번 %s[%s]" % (ground.index(q) + 1, private_number[ground[ground.index(q)]["room"]],
