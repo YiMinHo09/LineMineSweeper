@@ -46,15 +46,15 @@ def game_loop(target):
         notice.config(text=entry(target, subject)) # 메인 알고리즘 호출 후 리턴값으로 해설함
         print("round check:", current_player, "/", len(survivor))
     else:
-        best_choice = {"num": [], "probability": -99} # num 안에 있는 것들이 가장 좋은 방, 확률은 이 방의 잠재 가치
+        best_choice = {"num": [], "probability": -4} # num 안에 있는 것들이 가장 좋은 방, 확률은 이 방의 잠재 가치
         spade_choice = [] # 삽질 리스트 : 힌트 없이 새로 방을 들어가야 할 때 경우의 수
         # TODO : 이제 봇만 만들면 배포 준비 (미완성 코드)
         print("=알고리즘 시작=")
         for q, a in enumerate(ground):
-            probability = -99
+            probability = -1
             if a["available"]: # 들어갈 수 있는 방의 종류가 뭔지 추론함
                 print("!", q, "번째 방")
-                for k in [-1, 1]:
+                for k in [-1, 1]: # 윗 방 아랫방 호출
                     if not ground[(q + k) % (len(ground))]["available"]: # 단서가 있는가
                         print("힌트가 있음", k)
                         if ground[(q + k*2) % (len(ground))]["known"]: # 방의 종류가 확정됨
@@ -74,6 +74,7 @@ def game_loop(target):
                             elif probability == best_choice["probability"]:
                                 best_choice["num"].append(ground.index(a))
                                 print("추가 완료", best_choice)
+                            break
                         # ground[target-1]["room"] + ground[(target+1) % (len(ground))]["room"]
                         elif (ground[(q + k - 1)]["room"] + ground[(q + k + 1) % (len(ground))]["room"] == 0
                               or ground[(q + k - 1)]["room"] + ground[(q + k + 1) % (len(ground))]["room"] == 4):
@@ -90,11 +91,11 @@ def game_loop(target):
                                 print("추가 완료", best_choice)
                         else: # 생존 확률만 계산됨
                             print("경우의 수 계산 필요")
-                            if ground[q * k]["room"] == 1: # 공지인 경우(0) + 지뢰인 경우(-1)
+                            if ground[q + k]["room"] == 1: # 공지인 경우(0) + 지뢰인 경우(-1)
                                 probability = -1
-                            if ground[q * k]["room"] == 2: # 활로인 경우(+2) + 공지인 경우(0) + 지뢰인 경우(-1) + 지뢰인 경우(-1)
+                            if ground[q + k]["room"] == 2: # 활로인 경우(+2) + 공지인 경우(0) + 지뢰인 경우(-1) + 지뢰인 경우(-1)
                                 probability = 0
-                            if ground[q * k]["room"] == 3: # 활로인 경우(+2) + 지뢰인 경우(-1)
+                            if ground[q + k]["room"] == 3: # 활로인 경우(+2) + 지뢰인 경우(-1)
                                 probability = 1
                             # 등록
                             if probability > best_choice["probability"]:
@@ -104,7 +105,6 @@ def game_loop(target):
                             elif probability == best_choice["probability"]:
                                 best_choice["num"].append(ground.index(a))
                                 print("추가 완료", best_choice)
-                        break
                 else: # 무작위로 고를 목록에 추가
                     spade_choice.append(q)
                     print("변두리 방", spade_choice)
@@ -155,7 +155,7 @@ height = width // 10 * 7
 window.geometry("%sx%s+%s+%s" % (width, height, (window.winfo_screenwidth() - width) // 2,
                                  (window.winfo_screenheight() - height) // 4))
 window.configure(bg="#F46C8C")
-window.title("위아래 지뢰찾기")
+window.title("위 아래 지뢰찾기")
 window.iconbitmap("icon.ico")
 
 # 기본 요소 배치
@@ -168,7 +168,7 @@ front_man.pack()
 
 # 방 관련 데이터
 private_number = ["공지", "지뢰", "활로"] # 프런트 표기용 리스트 (고유 번호를 넣어 텍스트로 변환)
-contain = [15, 8, 2] # 공지, 지뢰, 활로 갯수
+contain = [13, 10, 2] # 공지, 지뢰, 활로 갯수
 ground = [] # 게임판
 
 # 맵 생성
