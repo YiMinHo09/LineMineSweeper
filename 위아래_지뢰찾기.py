@@ -156,6 +156,7 @@ window.geometry("%sx%s+%s+%s" % (width, height, (window.winfo_screenwidth() - wi
                                  (window.winfo_screenheight() - height) // 4))
 window.configure(bg="#F46C8C")
 window.title("위아래 지뢰찾기")
+window.iconbitmap("icon.ico")
 
 # 기본 요소 배치
 ui_ground = tkinter.Frame(window, width=width / 2, height=height, bg="#f46c8c")
