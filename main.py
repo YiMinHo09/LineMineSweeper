@@ -55,7 +55,7 @@ def game_loop(target):
             if a["available"]: # 들어갈 수 있는 방의 종류가 뭔지 추론함
                 print("!", q, "번째 방")
                 for k in [-1, 1]: # 윗 방 아랫방 호출
-                    if not ground[(q + k) % (len(ground))]["available"]: # 단서가 있는가
+                    if ground[(q + k) % (len(ground))]["known"]: # 단서가 있는가
                         print("힌트가 있음", k)
                         if ground[(q + k*2) % (len(ground))]["known"]: # 방의 종류가 확정됨
                             print("정석 추론 가능")
@@ -86,9 +86,11 @@ def game_loop(target):
                                 best_choice["num"] = [ground.index(a)]
                                 best_choice["probability"] = probability
                                 print("확률 갱신됨", best_choice)
+                                break
                             elif probability == best_choice["probability"]:
                                 best_choice["num"].append(ground.index(a))
                                 print("추가 완료", best_choice)
+                                break
                         else: # 생존 확률만 계산됨
                             print("경우의 수 계산 필요")
                             if ground[q + k]["room"] == 1: # 공지인 경우(0) + 지뢰인 경우(-1)
@@ -96,7 +98,14 @@ def game_loop(target):
                             if ground[q + k]["room"] == 2: # 활로인 경우(+2) + 공지인 경우(0) + 지뢰인 경우(-1) + 지뢰인 경우(-1)
                                 probability = 0
                             if ground[q + k]["room"] == 3: # 활로인 경우(+2) + 지뢰인 경우(-1)
-                                probability = 1
+                                if ground[q + -k]["known"] and ground[q + -k]["room"] == 1:
+                                    # 3,1 기믹 예외 처리
+                                    probability = -1
+                                    ground[q + 2]["known"] = 1
+                                    ground[q - 2]["known"] = 1
+                                    break
+                                else:
+                                    probability = 1
                             # 등록
                             if probability > best_choice["probability"]:
                                 best_choice["num"] = [ground.index(a)]
