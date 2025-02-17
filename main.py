@@ -48,14 +48,13 @@ def game_loop(target):
     else:
         best_choice = {"num": [], "probability": -4} # num 안에 있는 것들이 가장 좋은 방, 확률은 이 방의 잠재 가치
         spade_choice = [] # 삽질 리스트 : 힌트 없이 새로 방을 들어가야 할 때 경우의 수
-        # TODO : 이제 봇만 만들면 배포 준비 (미완성 코드)
         print("=알고리즘 시작=")
         for q, a in enumerate(ground):
             probability = -1
             if a["available"]: # 들어갈 수 있는 방의 종류가 뭔지 추론함
                 print("!", q, "번째 방")
                 for k in [-1, 1]: # 윗 방 아랫방 호출
-                    if ground[(q + k) % (len(ground))]["known"]: # 단서가 있는가
+                    if not ground[(q + k) % (len(ground))]["available"]: # 단서가 있는가
                         print("힌트가 있음", k)
                         if ground[(q + k*2) % (len(ground))]["known"]: # 방의 종류가 확정됨
                             print("정석 추론 가능")
@@ -100,10 +99,11 @@ def game_loop(target):
                             if ground[q + k]["room"] == 3: # 활로인 경우(+2) + 지뢰인 경우(-1)
                                 if ground[q + -k]["known"] and ground[q + -k]["room"] == 1:
                                     # 3,1 기믹 예외 처리
+                                    print("31 기믹 사용")
                                     probability = -1
+                                    a["known"] = 1
                                     ground[q + 2]["known"] = 1
                                     ground[q - 2]["known"] = 1
-                                    break
                                 else:
                                     probability = 1
                             # 등록
